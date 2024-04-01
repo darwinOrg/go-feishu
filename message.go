@@ -27,5 +27,5 @@ func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, imageFile st
 		return nil, errors.New(resp.Msg)
 	}
 
-	return chatBot.PostImage(resp.Data.ImageKey, lark.WithOpenID("7277397161934913564"))
+	return chatBot.PostImage(resp.Data.ImageKey, lark.WithChatID(""))
 }
