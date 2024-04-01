@@ -20,7 +20,7 @@ func TestSimpleSendTextMessage(t *testing.T) {
 
 func TestSimpleSendImageMessage(t *testing.T) {
 	ctx := &dgctx.DgContext{TraceId: "123"}
-	resp, err := dgfeishu.SimpleSendImageMessage(ctx, os.Getenv("APP_ID"), os.Getenv("APP_SECRET"), os.Getenv("WEBHOOK"), "test.jpg")
+	resp, err := dgfeishu.SimpleSendImageMessage(ctx, os.Getenv("APP_ID"), os.Getenv("APP_SECRET"), "test.jpg")
 	if err != nil {
 		dglogger.Error(ctx, err)
 		return

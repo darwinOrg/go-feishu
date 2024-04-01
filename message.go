@@ -13,7 +13,7 @@ func SimpleSendTextMessage(ctx *dgctx.DgContext, webhook, content string) (*lark
 	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgText).Text(content).Build())
 }
 
-func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, webhook, imageFile string) (*lark.PostNotificationV2Resp, error) {
+func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, imageFile string) (*lark.PostMessageResponse, error) {
 	dglogger.Infof(ctx, "simple send image message, imageFile: %s", imageFile)
 	chatBot := lark.NewChatBot(appId, appSecret)
 	_, _ = chatBot.GetTenantAccessTokenInternal(true)
@@ -27,6 +27,5 @@ func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, webhook, ima
 		return nil, errors.New(resp.Msg)
 	}
 
-	bot := lark.NewNotificationBot(webhook)
-	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgImage).Image(resp.Data.ImageKey).Build())
+	return chatBot.PostImage(resp.Data.ImageKey, lark.WithOpenID("7277397161934913564"))
 }
