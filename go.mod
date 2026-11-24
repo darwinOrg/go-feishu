@@ -3,10 +3,10 @@ module github.com/darwinOrg/go-feishu
 go 1.25.0
 
 require (
-	github.com/darwinOrg/go-common v0.2.30
-	github.com/darwinOrg/go-logger v0.0.19
+	github.com/darwinOrg/go-common v0.2.39
+	github.com/darwinOrg/go-logger v0.0.25
 	github.com/go-lark/lark v1.16.0
-	github.com/larksuite/oapi-sdk-go/v3 v3.9.9
+	github.com/larksuite/oapi-sdk-go/v3 v3.13.0
 )
 
 require (
