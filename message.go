@@ -22,14 +22,53 @@ import (
 )
 
 func SimpleSendTextMessage(ctx *dgctx.DgContext, webhook, content string) (*lark.PostNotificationV2Resp, error) {
-	dglogger.Infof(ctx, "simple send text message, content: %s", content)
+	dglogger.Debugf(ctx, "simple send text message, content: %s", content)
 	bot := lark.NewNotificationBot(webhook)
 	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgText).Text(content).Build())
 }
 
+func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, webhook, imageFile string) (*lark.PostNotificationV2Resp, error) {
+	dglogger.Debugf(ctx, "simple send image message, imageFile: %s", imageFile)
+	chatBot := lark.NewChatBot(appId, appSecret)
+	_, _ = chatBot.GetTenantAccessTokenInternal(true)
+	resp, err := chatBot.UploadImage(imageFile)
+	if err != nil {
+		dglogger.Errorf(ctx, "upload image[%s] error: %s", imageFile, err)
+		return nil, err
+	}
+	if resp.Code != 0 {
+		dglogger.Errorf(ctx, "upload image[%s] error: %s", imageFile, resp.Msg)
+		return nil, errors.New(resp.Msg)
+	}
+
+	bot := lark.NewNotificationBot(webhook)
+	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgImage).Image(resp.Data.ImageKey).Build())
+}
+
+func SimpleSendFileMessage(ctx *dgctx.DgContext, appId, appSecret, chatID, filePath string) (*lark.PostMessageResponse, error) {
+	dglogger.Debugf(ctx, "simple send file message, filePath: %s", filePath)
+	chatBot := lark.NewChatBot(appId, appSecret)
+	_, _ = chatBot.GetTenantAccessTokenInternal(true)
+	resp, err := chatBot.UploadFile(lark.UploadFileRequest{
+		FileType: feishuFileType(filePath),
+		FileName: filepath.Base(filePath),
+		Path:     filePath,
+	})
+	if err != nil {
+		dglogger.Errorf(ctx, "upload file[%s] error: %s", filePath, err)
+		return nil, err
+	}
+	if resp.Code != 0 {
+		dglogger.Errorf(ctx, "upload file[%s] error: %s", filePath, resp.Msg)
+		return nil, errors.New(resp.Msg)
+	}
+
+	return chatBot.PostMessage(lark.NewMsgBuffer(lark.MsgFile).BindChatID(chatID).File(resp.Data.FileKey).Build())
+}
+
 // SimpleSendTableCard 通过自定义机器人 webhook 发送表格卡片，表格依赖飞书客户端 7.4+
 func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers []string, rows [][]string) (*lark.PostNotificationV2Resp, error) {
-	dglogger.Infof(ctx, "simple send table card, title: %s, rows: %d", title, len(rows))
+	dglogger.Debugf(ctx, "simple send table card, title: %s, rows: %d", title, len(rows))
 	card, err := buildTableCard(title, headers, rows)
 	if err != nil {
 		return nil, err
@@ -75,45 +114,6 @@ func buildTableCard(title string, headers []string, rows [][]string) (string, er
 	}
 	b, err := json.Marshal(card)
 	return string(b), err
-}
-
-func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, webhook, imageFile string) (*lark.PostNotificationV2Resp, error) {
-	dglogger.Infof(ctx, "simple send image message, imageFile: %s", imageFile)
-	chatBot := lark.NewChatBot(appId, appSecret)
-	_, _ = chatBot.GetTenantAccessTokenInternal(true)
-	resp, err := chatBot.UploadImage(imageFile)
-	if err != nil {
-		dglogger.Errorf(ctx, "upload image[%s] error: %s", imageFile, err)
-		return nil, err
-	}
-	if resp.Code != 0 {
-		dglogger.Errorf(ctx, "upload image[%s] error: %s", imageFile, resp.Msg)
-		return nil, errors.New(resp.Msg)
-	}
-
-	bot := lark.NewNotificationBot(webhook)
-	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgImage).Image(resp.Data.ImageKey).Build())
-}
-
-func SimpleSendFileMessage(ctx *dgctx.DgContext, appId, appSecret, chatID, filePath string) (*lark.PostMessageResponse, error) {
-	dglogger.Infof(ctx, "simple send file message, filePath: %s", filePath)
-	chatBot := lark.NewChatBot(appId, appSecret)
-	_, _ = chatBot.GetTenantAccessTokenInternal(true)
-	resp, err := chatBot.UploadFile(lark.UploadFileRequest{
-		FileType: feishuFileType(filePath),
-		FileName: filepath.Base(filePath),
-		Path:     filePath,
-	})
-	if err != nil {
-		dglogger.Errorf(ctx, "upload file[%s] error: %s", filePath, err)
-		return nil, err
-	}
-	if resp.Code != 0 {
-		dglogger.Errorf(ctx, "upload file[%s] error: %s", filePath, resp.Msg)
-		return nil, errors.New(resp.Msg)
-	}
-
-	return chatBot.PostMessage(lark.NewMsgBuffer(lark.MsgFile).BindChatID(chatID).File(resp.Data.FileKey).Build())
 }
 
 // feishuFileType 飞书只识别这几种 file_type，其余按 stream 上传

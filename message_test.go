@@ -43,7 +43,7 @@ func TestSimpleSendFileMessage(t *testing.T) {
 
 func TestSimpleSendTableCard(t *testing.T) {
 	ctx := dgctx.SimpleDgContext()
-	resp, err := dgfeishu.SimpleSendTableCard(ctx, os.Getenv("WEBHOOK"), "销售数据",
+	resp, err := dgfeishu.SimpleSendTableCard(ctx, os.Getenv("WEBHOOK"), "QA销售数据",
 		[]string{"客户", "金额", "状态"},
 		[][]string{
 			{"飞书科技", "168", "已签约"},
