@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -41,6 +42,48 @@ func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, imageFile st
 	}
 
 	return chatBot.PostImage(resp.Data.ImageKey, lark.WithChatID(""))
+}
+
+// SimpleSendFileMessage 发送文件消息到指定群
+func SimpleSendFileMessage(ctx *dgctx.DgContext, appId, appSecret, chatID, filePath string) (*lark.PostMessageResponse, error) {
+	dglogger.Infof(ctx, "simple send file message, filePath: %s", filePath)
+	chatBot := lark.NewChatBot(appId, appSecret)
+	_, _ = chatBot.GetTenantAccessTokenInternal(true)
+	resp, err := chatBot.UploadFile(lark.UploadFileRequest{
+		FileType: feishuFileType(filePath),
+		FileName: filepath.Base(filePath),
+		Path:     filePath,
+	})
+	if err != nil {
+		dglogger.Errorf(ctx, "upload file[%s] error: %s", filePath, err)
+		return nil, err
+	}
+	if resp.Code != 0 {
+		dglogger.Errorf(ctx, "upload file[%s] error: %s", filePath, resp.Msg)
+		return nil, errors.New(resp.Msg)
+	}
+
+	return chatBot.PostMessage(lark.NewMsgBuffer(lark.MsgFile).BindChatID(chatID).File(resp.Data.FileKey).Build())
+}
+
+// feishuFileType 飞书只识别这几种 file_type，其余按 stream 上传
+func feishuFileType(filePath string) string {
+	switch strings.ToLower(filepath.Ext(filePath)) {
+	case ".pdf":
+		return "pdf"
+	case ".doc", ".docx":
+		return "doc"
+	case ".xls", ".xlsx":
+		return "xls"
+	case ".ppt", ".pptx":
+		return "ppt"
+	case ".mp4":
+		return "mp4"
+	case ".opus":
+		return "opus"
+	default:
+		return "stream"
+	}
 }
 
 var (

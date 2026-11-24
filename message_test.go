@@ -31,6 +31,16 @@ func TestSimpleSendImageMessage(t *testing.T) {
 	dglogger.Info(ctx, resp)
 }
 
+func TestSimpleSendFileMessage(t *testing.T) {
+	ctx := dgctx.SimpleDgContext()
+	resp, err := dgfeishu.SimpleSendFileMessage(ctx, os.Getenv("APP_ID"), os.Getenv("APP_SECRET"), os.Getenv("CHAT_ID"), "test.jpg")
+	if err != nil {
+		dglogger.Error(ctx, err)
+		return
+	}
+	dglogger.Info(ctx, resp)
+}
+
 func TestGetFirstWsMsg(t *testing.T) {
 	ctx := dgctx.SimpleDgContext()
 	wsMsg, err := dgfeishu.GetFirstWsMsg(ctx, time.Minute)
