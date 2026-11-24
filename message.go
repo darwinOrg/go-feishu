@@ -27,7 +27,57 @@ func SimpleSendTextMessage(ctx *dgctx.DgContext, webhook, content string) (*lark
 	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgText).Text(content).Build())
 }
 
-func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, imageFile string) (*lark.PostMessageResponse, error) {
+// SimpleSendTableCard 通过自定义机器人 webhook 发送表格卡片，表格依赖飞书客户端 7.4+
+func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers []string, rows [][]string) (*lark.PostNotificationV2Resp, error) {
+	dglogger.Infof(ctx, "simple send table card, title: %s, rows: %d", title, len(rows))
+	card, err := buildTableCard(title, headers, rows)
+	if err != nil {
+		return nil, err
+	}
+	bot := lark.NewNotificationBot(webhook)
+	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgInteractive).Card(card).Build())
+}
+
+// buildTableCard 列名固定为 col_i，行数据按列顺序填充，缺列留空
+func buildTableCard(title string, headers []string, rows [][]string) (string, error) {
+	columns := make([]map[string]any, len(headers))
+	names := make([]string, len(headers))
+	for i, header := range headers {
+		names[i] = fmt.Sprintf("col_%d", i)
+		columns[i] = map[string]any{"name": names[i], "display_name": header, "data_type": "text"}
+	}
+
+	tableRows := make([]map[string]string, len(rows))
+	for i, row := range rows {
+		tableRows[i] = make(map[string]string, len(headers))
+		for j, name := range names {
+			if j < len(row) {
+				tableRows[i][name] = row[j]
+			}
+		}
+	}
+
+	card := map[string]any{
+		"header": map[string]any{
+			"template": "blue",
+			"title":    map[string]any{"tag": "plain_text", "content": title},
+		},
+		"elements": []any{
+			map[string]any{
+				"tag":          "table",
+				"page_size":    10,
+				"row_height":   "low",
+				"header_style": map[string]any{"bold": true, "background_style": "grey"},
+				"columns":      columns,
+				"rows":         tableRows,
+			},
+		},
+	}
+	b, err := json.Marshal(card)
+	return string(b), err
+}
+
+func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, webhook, imageFile string) (*lark.PostNotificationV2Resp, error) {
 	dglogger.Infof(ctx, "simple send image message, imageFile: %s", imageFile)
 	chatBot := lark.NewChatBot(appId, appSecret)
 	_, _ = chatBot.GetTenantAccessTokenInternal(true)
@@ -41,10 +91,10 @@ func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, imageFile st
 		return nil, errors.New(resp.Msg)
 	}
 
-	return chatBot.PostImage(resp.Data.ImageKey, lark.WithChatID(""))
+	bot := lark.NewNotificationBot(webhook)
+	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgImage).Image(resp.Data.ImageKey).Build())
 }
 
-// SimpleSendFileMessage 发送文件消息到指定群
 func SimpleSendFileMessage(ctx *dgctx.DgContext, appId, appSecret, chatID, filePath string) (*lark.PostMessageResponse, error) {
 	dglogger.Infof(ctx, "simple send file message, filePath: %s", filePath)
 	chatBot := lark.NewChatBot(appId, appSecret)

@@ -23,7 +23,7 @@ func TestSimpleSendTextMessage(t *testing.T) {
 
 func TestSimpleSendImageMessage(t *testing.T) {
 	ctx := dgctx.SimpleDgContext()
-	resp, err := dgfeishu.SimpleSendImageMessage(ctx, os.Getenv("APP_ID"), os.Getenv("APP_SECRET"), "test.jpg")
+	resp, err := dgfeishu.SimpleSendImageMessage(ctx, os.Getenv("APP_ID"), os.Getenv("APP_SECRET"), os.Getenv("WEBHOOK"), "test.jpg")
 	if err != nil {
 		dglogger.Error(ctx, err)
 		return
@@ -34,6 +34,21 @@ func TestSimpleSendImageMessage(t *testing.T) {
 func TestSimpleSendFileMessage(t *testing.T) {
 	ctx := dgctx.SimpleDgContext()
 	resp, err := dgfeishu.SimpleSendFileMessage(ctx, os.Getenv("APP_ID"), os.Getenv("APP_SECRET"), os.Getenv("CHAT_ID"), "test.jpg")
+	if err != nil {
+		dglogger.Error(ctx, err)
+		return
+	}
+	dglogger.Info(ctx, resp)
+}
+
+func TestSimpleSendTableCard(t *testing.T) {
+	ctx := dgctx.SimpleDgContext()
+	resp, err := dgfeishu.SimpleSendTableCard(ctx, os.Getenv("WEBHOOK"), "销售数据",
+		[]string{"客户", "金额", "状态"},
+		[][]string{
+			{"飞书科技", "168", "已签约"},
+			{"某公司", "26.5", "跟进中"},
+		})
 	if err != nil {
 		dglogger.Error(ctx, err)
 		return
