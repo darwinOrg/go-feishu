@@ -23,7 +23,7 @@ func TestFeishuFileType(t *testing.T) {
 }
 
 func TestBuildTableCard(t *testing.T) {
-	card, err := buildTableCard("标题", []string{"客户", "金额"}, [][]string{{"A", "1"}, {"B"}})
+	card, err := buildTableCard("标题", []string{"客户", "金额"}, [][]any{{"A", "1"}, {"B"}})
 	if err != nil {
 		t.Fatal(err)
 	}

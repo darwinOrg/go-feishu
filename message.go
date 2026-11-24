@@ -67,7 +67,7 @@ func SimpleSendFileMessage(ctx *dgctx.DgContext, appId, appSecret, chatID, fileP
 }
 
 // SimpleSendTableCard 通过自定义机器人 webhook 发送表格卡片，表格依赖飞书客户端 7.4+
-func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers []string, rows [][]string) (*lark.PostNotificationV2Resp, error) {
+func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers []string, rows [][]any) (*lark.PostNotificationV2Resp, error) {
 	dglogger.Debugf(ctx, "simple send table card, title: %s, rows: %d", title, len(rows))
 	card, err := buildTableCard(title, headers, rows)
 	if err != nil {
@@ -78,7 +78,7 @@ func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers []
 }
 
 // buildTableCard 列名固定为 col_i，行数据按列顺序填充，缺列留空
-func buildTableCard(title string, headers []string, rows [][]string) (string, error) {
+func buildTableCard(title string, headers []string, rows [][]any) (string, error) {
 	columns := make([]map[string]any, len(headers))
 	names := make([]string, len(headers))
 	for i, header := range headers {
@@ -86,9 +86,9 @@ func buildTableCard(title string, headers []string, rows [][]string) (string, er
 		columns[i] = map[string]any{"name": names[i], "display_name": header, "data_type": "text"}
 	}
 
-	tableRows := make([]map[string]string, len(rows))
+	tableRows := make([]map[string]any, len(rows))
 	for i, row := range rows {
-		tableRows[i] = make(map[string]string, len(headers))
+		tableRows[i] = make(map[string]any, len(headers))
 		for j, name := range names {
 			if j < len(row) {
 				tableRows[i][name] = row[j]
