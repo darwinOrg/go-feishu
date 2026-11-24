@@ -23,7 +23,7 @@ func TestFeishuFileType(t *testing.T) {
 }
 
 func TestBuildTableCard(t *testing.T) {
-	card, err := buildTableCard("标题", []string{"客户", "金额"}, [][]any{{"A", "1"}, {"B"}})
+	card, err := buildTableCard("标题", []string{"客户", "金额"}, []string{"120px", ""}, [][]any{{"A", "1"}, {"B"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,6 +48,9 @@ func TestBuildTableCard(t *testing.T) {
 	}
 	if table.Columns[1]["display_name"] != "金额" {
 		t.Errorf("column 1 display_name = %v", table.Columns[1]["display_name"])
+	}
+	if table.Columns[0]["width"] != "120px" || table.Columns[1]["width"] != "auto" {
+		t.Errorf("column widths = %v/%v", table.Columns[0]["width"], table.Columns[1]["width"])
 	}
 	if table.Rows[0]["col_0"] != "A" || table.Rows[0]["col_1"] != "1" {
 		t.Errorf("row 0 = %v", table.Rows[0])

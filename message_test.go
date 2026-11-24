@@ -45,8 +45,9 @@ func TestSimpleSendTableCard(t *testing.T) {
 	ctx := dgctx.SimpleDgContext()
 	resp, err := dgfeishu.SimpleSendTableCard(ctx, os.Getenv("WEBHOOK"), "销售数据",
 		[]string{"客户", "金额", "状态"},
+		[]string{"auto", "120px", "40%"},
 		[][]any{
-			{"飞书科技", 168, "已签约"},
+			{"飞书科技", 168, "已签约XXXXXXXXXXXXXXXXXXXXXxXXXXXXXXXXXXXXXXXXXXXxXXXXXXXXXXX\nXXXXXXXXXXxXXXXXXXXXXXXXXXXXXXXXxXXXXXXXXXXXXXXXXXXXXXxXXXXXXXXXXXXXXXXXXXXXx"},
 			{"某公司", 26.5, "跟进中"},
 		})
 	if err != nil {

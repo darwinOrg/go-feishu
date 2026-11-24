@@ -67,9 +67,10 @@ func SimpleSendFileMessage(ctx *dgctx.DgContext, appId, appSecret, chatID, fileP
 }
 
 // SimpleSendTableCard 通过自定义机器人 webhook 发送表格卡片，表格依赖飞书客户端 7.4+
-func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers []string, rows [][]any) (*lark.PostNotificationV2Resp, error) {
+// widths 与 headers 一一对应，支持 auto、120px、25%，留空按 auto
+func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers, widths []string, rows [][]any) (*lark.PostNotificationV2Resp, error) {
 	dglogger.Debugf(ctx, "simple send table card, title: %s, rows: %d", title, len(rows))
-	card, err := buildTableCard(title, headers, rows)
+	card, err := buildTableCard(title, headers, widths, rows)
 	if err != nil {
 		return nil, err
 	}
@@ -78,12 +79,16 @@ func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers []
 }
 
 // buildTableCard 列名固定为 col_i，行数据按列顺序填充，缺列留空
-func buildTableCard(title string, headers []string, rows [][]any) (string, error) {
+func buildTableCard(title string, headers, widths []string, rows [][]any) (string, error) {
 	columns := make([]map[string]any, len(headers))
 	names := make([]string, len(headers))
 	for i, header := range headers {
 		names[i] = fmt.Sprintf("col_%d", i)
-		columns[i] = map[string]any{"name": names[i], "display_name": header, "data_type": "text"}
+		width := "auto"
+		if i < len(widths) && widths[i] != "" {
+			width = widths[i]
+		}
+		columns[i] = map[string]any{"name": names[i], "display_name": header, "data_type": "text", "width": width}
 	}
 
 	tableRows := make([]map[string]any, len(rows))
