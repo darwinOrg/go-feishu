@@ -21,61 +21,94 @@ import (
 	larkws "github.com/larksuite/oapi-sdk-go/v3/ws"
 )
 
-func SimpleSendTextMessage(ctx *dgctx.DgContext, webhook, content string) (*lark.PostNotificationV2Resp, error) {
+func SimpleSendTextMessage(ctx *dgctx.DgContext, webhook, content string) {
 	dglogger.Debugf(ctx, "simple send text message, content: %s", content)
 	bot := lark.NewNotificationBot(webhook)
-	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgText).Text(content).Build())
+	resp, err := bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgText).Text(content).Build())
+	if err != nil {
+		dglogger.Errorf(ctx, "simple send text message error | content: %s | err: %v", content, err)
+		return
+	}
+	if resp.Code != 0 {
+		dglogger.Errorf(ctx, "simple send text message error | content: %s | err: %s", content, resp.Msg)
+		return
+	}
 }
 
-func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, webhook, imageFile string) (*lark.PostNotificationV2Resp, error) {
+func SimpleSendImageMessage(ctx *dgctx.DgContext, appId, appSecret, webhook, imageFile string) {
 	dglogger.Debugf(ctx, "simple send image message, imageFile: %s", imageFile)
 	chatBot := lark.NewChatBot(appId, appSecret)
 	_, _ = chatBot.GetTenantAccessTokenInternal(true)
-	resp, err := chatBot.UploadImage(imageFile)
+	resp1, err := chatBot.UploadImage(imageFile)
 	if err != nil {
 		dglogger.Errorf(ctx, "upload image[%s] error: %s", imageFile, err)
-		return nil, err
+		return
 	}
-	if resp.Code != 0 {
-		dglogger.Errorf(ctx, "upload image[%s] error: %s", imageFile, resp.Msg)
-		return nil, errors.New(resp.Msg)
+	if resp1.Code != 0 {
+		dglogger.Errorf(ctx, "upload image[%s] error: %s", imageFile, resp1.Msg)
+		return
 	}
 
 	bot := lark.NewNotificationBot(webhook)
-	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgImage).Image(resp.Data.ImageKey).Build())
+	resp2, err := bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgImage).Image(resp1.Data.ImageKey).Build())
+	if err != nil {
+		dglogger.Errorf(ctx, "simple send image image[%s] error: %v", imageFile, err)
+		return
+	}
+	if resp2.Code != 0 {
+		dglogger.Errorf(ctx, "simple send image image[%s] error: %s", imageFile, resp2.Msg)
+		return
+	}
 }
 
-func SimpleSendFileMessage(ctx *dgctx.DgContext, appId, appSecret, chatID, filePath string) (*lark.PostMessageResponse, error) {
+func SimpleSendFileMessage(ctx *dgctx.DgContext, appId, appSecret, chatID, filePath string) {
 	dglogger.Debugf(ctx, "simple send file message, filePath: %s", filePath)
 	chatBot := lark.NewChatBot(appId, appSecret)
 	_, _ = chatBot.GetTenantAccessTokenInternal(true)
-	resp, err := chatBot.UploadFile(lark.UploadFileRequest{
+	resp1, err := chatBot.UploadFile(lark.UploadFileRequest{
 		FileType: feishuFileType(filePath),
 		FileName: filepath.Base(filePath),
 		Path:     filePath,
 	})
 	if err != nil {
 		dglogger.Errorf(ctx, "upload file[%s] error: %s", filePath, err)
-		return nil, err
+		return
 	}
-	if resp.Code != 0 {
-		dglogger.Errorf(ctx, "upload file[%s] error: %s", filePath, resp.Msg)
-		return nil, errors.New(resp.Msg)
+	if resp1.Code != 0 {
+		dglogger.Errorf(ctx, "upload file[%s] error: %s", filePath, resp1.Msg)
+		return
 	}
 
-	return chatBot.PostMessage(lark.NewMsgBuffer(lark.MsgFile).BindChatID(chatID).File(resp.Data.FileKey).Build())
+	resp2, err := chatBot.PostMessage(lark.NewMsgBuffer(lark.MsgFile).BindChatID(chatID).File(resp1.Data.FileKey).Build())
+	if err != nil {
+		dglogger.Errorf(ctx, "send file[%s] error: %s", filePath, err)
+		return
+	}
+	if resp2.Code != 0 {
+		dglogger.Errorf(ctx, "send file[%s] error: %s", filePath, resp2.Msg)
+		return
+	}
 }
 
 // SimpleSendTableCard 通过自定义机器人 webhook 发送表格卡片，表格依赖飞书客户端 7.4+
 // widths 与 headers 一一对应，支持 auto、120px、25%，留空按 auto
-func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers, widths []string, rows [][]any) (*lark.PostNotificationV2Resp, error) {
+func SimpleSendTableCard(ctx *dgctx.DgContext, webhook, title string, headers, widths []string, rows [][]any) {
 	dglogger.Debugf(ctx, "simple send table card, title: %s, rows: %d", title, len(rows))
 	card, err := buildTableCard(title, headers, widths, rows)
 	if err != nil {
-		return nil, err
+		dglogger.Errorf(ctx, "build table card err: %v", err)
+		return
 	}
 	bot := lark.NewNotificationBot(webhook)
-	return bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgInteractive).Card(card).Build())
+	resp, err := bot.PostNotificationV2(lark.NewMsgBuffer(lark.MsgInteractive).Card(card).Build())
+	if err != nil {
+		dglogger.Errorf(ctx, "simple send table card error | title: %s | err: %v", title, err)
+		return
+	}
+	if resp.Code != 0 {
+		dglogger.Errorf(ctx, "simple send table card error | title: %s | err: %s", title, resp.Msg)
+		return
+	}
 }
 
 // buildTableCard 列名固定为 col_i，行数据按列顺序填充，缺列留空
